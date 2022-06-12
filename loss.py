@@ -5,7 +5,7 @@ import jraph
 
 from typing import Tuple
 
-from model import inner_product_decode
+from model import inner_product_decode, VGAEOutput
 
 def compute_vgae_loss(params: hk.Params, graph: jraph.GraphsTuple,
                  senders: jnp.ndarray, receivers: jnp.ndarray,
@@ -16,8 +16,8 @@ def compute_vgae_loss(params: hk.Params, graph: jraph.GraphsTuple,
   mean_graph, log_std_graph = net.apply(params, graph)
   
   mean, log_std = mean_graph.nodes, log_std_graph.nodes
-  eps = jax.random.normal(rng_key, mean.shape)
-  z = mean + eps * jnp.exp(log_std)
+  std = jnp.exp(log_std)
+  z = mean + std * jax.random.normal(rng_key, mean.shape)
   logits = inner_product_decode(z, senders, receivers)
   
   n_node = z.shape[0]
@@ -37,6 +37,11 @@ def compute_gae_loss(params: hk.Params, graph: jraph.GraphsTuple,
   logits = inner_product_decode(pred_graph.nodes, senders, receivers)
   loss = compute_bce_with_logits_loss(logits, labels)
   return loss, logits
+
+
+def compute_mse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+  """Computes mean squared error loss."""
+  return jnp.mean(jnp.square(x - y))
 
 
 def compute_bce_with_logits_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
