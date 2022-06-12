@@ -3,7 +3,36 @@ import jax
 import jax.numpy as jnp
 import jraph
 
-from typing import Tuple
+from typing import Tuple, NamedTuple
+
+class VGAEOutput(NamedTuple):
+  mean: jnp.ndarray
+  log_std: jnp.ndarray
+  output: jraph.GraphsTuple
+  
+class VGAE(hk.Module):
+  def __init__(
+    self,
+    hidden_dim: int,
+    latent_dim: int,
+    output_dim: int,
+  ):
+    super().__init__()
+    self._hidden_dim = hidden_dim
+    self._latent_dim = latent_dim
+    self._output_dim = output_dim
+  
+  def __call__(self, graph: jraph.GraphsTuple) -> VGAEOutput:
+    mean_graph, log_std_graph = vgae_encoder(
+      graph, self._hidden_dim, self._latent_dim
+    )
+    mean, log_std = mean_graph.node, log_std_graph
+    std = jnp.exp(log_std)
+    z = mean + std * jax.random.normal(hk.next_rng_key(), mean.shape)
+    z_graph = mean_graph._replace(nodes=z)
+    output = prior_decode(z_graph, self._hidden_dim, self._output_dim)
+
+    return VGAEOutput(mean, log_std, output)
 
 def vgae_encoder(graph: jraph.GraphsTuple,
                  hidden_dim: int,
@@ -49,6 +78,21 @@ def gae_encoder(graph: jraph.GraphsTuple,
   @jraph.concatenated_args
   def node_update_fn(feats: jnp.ndarray) -> jnp.ndarray:
     net = hk.Sequential([hk.Linear(hidden_dim), jax.nn.relu, hk.Linear(latent_dim)])
+    return net(feats)
+  
+  net = jraph.GraphConvolution(
+    update_node_fn=node_update_fn, 
+    add_self_edges=True)
+  return net(graph)
+
+
+def prior_decode(graph: jraph.GraphsTuple,
+                 hidden_dim: jnp.ndarray,
+                 output_dim: jnp.ndarray) -> jnp.ndarray:
+  
+  @jraph.concatenated_args
+  def node_update_fn(feats: jnp.ndarray) -> jnp.ndarray:
+    net = hk.Sequential([hk.Linear(hidden_dim), jax.nn.relu, hk.Linear(output_dim)])
     return net(feats)
   
   net = jraph.GraphConvolution(
