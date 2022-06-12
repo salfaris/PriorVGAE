@@ -26,7 +26,7 @@ class VGAE(hk.Module):
     mean_graph, log_std_graph = vgae_encoder(
       graph, self._hidden_dim, self._latent_dim
     )
-    mean, log_std = mean_graph.node, log_std_graph
+    mean, log_std = mean_graph.nodes, log_std_graph.nodes
     std = jnp.exp(log_std)
     z = mean + std * jax.random.normal(hk.next_rng_key(), mean.shape)
     z_graph = mean_graph._replace(nodes=z)
