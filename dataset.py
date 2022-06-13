@@ -12,6 +12,7 @@ def load_dataset(path_to_dataset: str) -> jraph.GraphsTuple:
         cora_ds = pickle.load(f)
     return cora_ds
 
+
 def convert_jraph_to_networkx_graph(jraph_graph: jraph.GraphsTuple) -> nx.Graph:
   """Converts a JAX GraphsTuple to a NetworkX graph.
   
@@ -34,6 +35,14 @@ def convert_jraph_to_networkx_graph(jraph_graph: jraph.GraphsTuple) -> nx.Graph:
       nx_graph.add_edge(
           int(senders[e]), int(receivers[e]), edge_feature=edges[e])
   return nx_graph
+
+
+def draw_jraph_graph_structure(jraph_graph: jraph.GraphsTuple) -> None:
+  nx_graph = convert_jraph_to_networkx_graph(jraph_graph)
+  pos = nx.spring_layout(nx_graph)
+  nx.draw(
+      nx_graph, pos=pos, with_labels=True, node_size=500, font_color='yellow')
+
 
 def compute_norm_and_weights(graph: jraph.GraphsTuple) -> Tuple[float, float]:
   graph_n_node = graph.n_node.item()

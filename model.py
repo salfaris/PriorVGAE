@@ -51,16 +51,16 @@ def vgae_encoder(graph: jraph.GraphsTuple,
     """Node update function for latent layer."""
     return hk.Linear(latent_dim)(feats)
 
-  net_hidden1 = jraph.GraphConvolution(
+  net_hidden = jraph.GraphConvolution(
     update_node_fn=hidden_node_update_fn,
     add_self_edges=True
   )
-  h_graph = net_hidden1(graph)
-  net_hidden2 = jraph.GraphConvolution(
+  h_graph = net_hidden(graph)
+  net_hidden = jraph.GraphConvolution(
     update_node_fn=hidden_node_update_fn,
     add_self_edges=True
   )
-  h_graph = net_hidden2(h_graph)
+  h_graph = net_hidden(graph)
   
   net_mean = jraph.GraphConvolution(
     update_node_fn=latent_node_update_fn,
