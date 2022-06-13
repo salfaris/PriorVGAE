@@ -39,6 +39,29 @@ def compute_gae_loss(params: hk.Params, graph: jraph.GraphsTuple,
   return loss, logits
 
 
+def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.ndarray:
+  """Computes the loss induced by the L_{p,q} norm.
+  
+  The L_{p,q} norm applies the Lp norm over features, and then
+  the Lq norm over datapoints.
+  """
+  return jnp.power(
+    jnp.sum(jnp.power(jnp.sum(jnp.power(x-y, p), axis=0), q/p)), 1/q)
+
+def compute_L21_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+  """Computes the loss induced by the L_{2,1} norm.
+
+  The L_{2,1} norm applies the L2 norm over features, and then 
+  sum across datapoints.
+  """
+  return jnp.sum(jnp.sqrt(jnp.sum(jnp.square(x-y), axis=0)))
+
+
+def compute_frobenius_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+  """Computes root squared error loss."""
+  return jnp.sqrt(jnp.sum((jnp.square(x - y))))
+
+
 def compute_mse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
   """Computes mean squared error loss."""
   return jnp.mean(jnp.square(x - y))
