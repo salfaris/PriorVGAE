@@ -1,43 +1,4 @@
-import haiku as hk
-import jax
 import jax.numpy as jnp
-import jraph
-
-from typing import Tuple
-
-from model import inner_product_decode, VGAEOutput
-
-def compute_vgae_loss(params: hk.Params, graph: jraph.GraphsTuple,
-                 senders: jnp.ndarray, receivers: jnp.ndarray,
-                 labels: jnp.ndarray,
-                 net: hk.Transformed, 
-                 rng_key: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-  """Computes VGAE loss."""
-  mean_graph, log_std_graph = net.apply(params, graph)
-  
-  mean, log_std = mean_graph.nodes, log_std_graph.nodes
-  std = jnp.exp(log_std)
-  z = mean + std * jax.random.normal(rng_key, mean.shape)
-  logits = inner_product_decode(z, senders, receivers)
-  
-  n_node = z.shape[0]
-  kld = 1.0/n_node * jnp.mean(compute_kl_gaussian(mean, log_std), axis=-1)
-  log_likelihood = compute_bce_with_logits_loss(logits, labels)
-  
-  loss = log_likelihood + kld  # want to maximize this quantity.
-  return loss, logits
-
-
-def compute_gae_loss(params: hk.Params, graph: jraph.GraphsTuple,
-                 senders: jnp.ndarray, receivers: jnp.ndarray,
-                 labels: jnp.ndarray,
-                 net: hk.Transformed) -> Tuple[jnp.ndarray, jnp.ndarray]:
-  """Computes GAE loss."""
-  pred_graph = net.apply(params, graph)
-  logits = inner_product_decode(pred_graph.nodes, senders, receivers)
-  loss = compute_bce_with_logits_loss(logits, labels)
-  return loss, logits
-
 
 def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.ndarray:
   """Computes the loss induced by the L_{p,q} norm.
@@ -47,6 +8,7 @@ def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.
   """
   return jnp.power(
     jnp.sum(jnp.power(jnp.sum(jnp.power(x-y, p), axis=0), q/p)), 1/q)
+
 
 def compute_L21_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
   """Computes the loss induced by the L_{2,1} norm.
@@ -65,46 +27,6 @@ def compute_frobenius_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
 def compute_mse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
   """Computes mean squared error loss."""
   return jnp.mean(jnp.square(x - y))
-
-
-def compute_bce_with_logits_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-  """Computes binary cross-entropy with logits loss.
-
-  Combines sigmoid and BCE, and uses log-sum-exp trick for numerical stability.
-  See https://stackoverflow.com/a/66909858 if you want to learn more.
-
-  Args:
-    x: Predictions (logits).
-    y: Labels.
-
-  Returns:
-    Binary cross-entropy loss with mean aggregation.
-
-  """
-  max_val = jnp.clip(-x, 0, None)
-  loss = x - x*y + max_val + jnp.log(jnp.exp(-max_val) + jnp.exp((-x-max_val)))
-  return jnp.mean(loss, axis=-1)
-
-
-def compute_weighted_bce_with_logits_loss(
-  x: jnp.ndarray, y: jnp.ndarray, weight: jnp.ndarray) -> jnp.ndarray:
-  """Computes weighted binary cross-entropy with logits loss.
-
-  Combines sigmoid and BCE, and uses log-sum-exp trick for numerical stability.
-  See https://stackoverflow.com/a/66909858 if you want to learn more.
-
-  Args:
-    x: Predictions (logits).
-    y: Labels.
-
-  Returns:
-    Binary cross-entropy loss.
-
-  """
-  max_val = jnp.clip(-x, 0, None)
-  loss = x - x*y + max_val + jnp.log(jnp.exp(-max_val) + jnp.exp((-x-max_val)))
-  loss = weight * loss
-  return jnp.mean(loss, axis=-1)
 
 
 def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:

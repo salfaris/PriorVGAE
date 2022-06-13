@@ -3,11 +3,9 @@ import jax
 import jax.numpy as jnp
 import jraph
 import optax
-from sklearn.metrics import roc_auc_score
 from absl import app, flags, logging
 
-import functools
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 
 from dataset import load_dataset
 from loss import compute_kl_gaussian, compute_mse_loss
@@ -61,7 +59,7 @@ def train(dataset: List[Dict[str, Any]]) -> hk.Params:
     rng_key: jnp.ndarray,
     opt_state: optax.OptState,
     graph: jraph.GraphsTuple,
-  ): 
+  ):
     """Updates the parameters of the network."""
     grads = jax.grad(loss_fn)(params, rng_key, graph)
     updates, new_opt_state = optimizer.update(grads, opt_state)
@@ -75,6 +73,7 @@ def train(dataset: List[Dict[str, Any]]) -> hk.Params:
       train_loss = loss_fn(params, next(rng_seq), train_graph)
       train_output = net.apply(params, next(rng_seq), train_graph)
       logging.info(f'epoch: {epoch}, train_loss: {train_loss:.3f}')
+  
   logging.info('Training finished')
   return params
 
