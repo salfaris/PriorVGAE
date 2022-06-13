@@ -92,7 +92,7 @@ def prior_decode(graph: jraph.GraphsTuple,
   
   @jraph.concatenated_args
   def node_update_fn(feats: jnp.ndarray) -> jnp.ndarray:
-    net = hk.Sequential([hk.Linear(hidden_dim), jax.nn.relu, hk.Linear(output_dim)])
+    net = hk.Sequential([hk.Linear(hidden_dim, name='hidden'), jax.nn.relu, hk.Linear(output_dim, name='output')])
     return net(feats)
   
   net = jraph.GraphConvolution(
