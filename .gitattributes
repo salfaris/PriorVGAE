@@ -1,1 +1,4 @@
-.ipynb linguist-documentation
+# Let linguist not count ipython notebooks
+# as a language.
+
+*.ipynb linguist-documentation
