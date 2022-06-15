@@ -40,8 +40,8 @@ def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
         A vector representing KL divergence of the two Gaussian distributions
         of length |V| where V is the nodes in the graph.
     """
-    var = jnp.exp(log_std)
+    std = jnp.exp(log_std)
     return 0.5 * jnp.sum(
-      -2*log_std - 1.0 + jnp.square(var) + jnp.square(mean), axis=-1)
+      -2*log_std - 1.0 + jnp.square(std) + jnp.square(mean), axis=-1)
   
   
