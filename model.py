@@ -43,7 +43,7 @@ def vgae_encoder(graph: jraph.GraphsTuple,
   @jraph.concatenated_args
   def hidden_node_update_fn(feats: jnp.ndarray) -> jnp.ndarray:
     """Node update function for hidden layer."""
-    net = hk.Sequential([hk.Linear(hidden_dim), jax.nn.relu])
+    net = hk.Sequential([hk.Linear(hidden_dim), jax.nn.elu])
     return net(feats)
 
   @jraph.concatenated_args
@@ -63,12 +63,10 @@ def vgae_encoder(graph: jraph.GraphsTuple,
   h_graph = net_hidden(graph)
   
   net_mean = jraph.GraphConvolution(
-    update_node_fn=latent_node_update_fn,
-    add_self_edges=True
+    update_node_fn=latent_node_update_fn
   )
   net_log_std = jraph.GraphConvolution(
-    update_node_fn=latent_node_update_fn,
-    add_self_edges=True
+    update_node_fn=latent_node_update_fn
   )
   mean_graph, log_std_graph = net_mean(h_graph), net_log_std(h_graph)
   return mean_graph, log_std_graph
@@ -91,8 +89,7 @@ def prior_decode(graph: jraph.GraphsTuple,
     add_self_edges=True)
   graph = net(graph)
   net = jraph.GraphConvolution(
-    update_node_fn=hk.Linear(output_dim, name='decoder_output'),
-    add_self_edges=True)
+    update_node_fn=hk.Linear(output_dim, name='decoder_output'))
   return net(graph)
 
 
