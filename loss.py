@@ -1,32 +1,38 @@
 import jax.numpy as jnp
 
+
 def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.ndarray:
-  """Computes the loss induced by the L_{p,q} norm.
-  
-  The L_{p,q} norm applies the Lp norm over features, and then
-  the Lq norm over datapoints.
-  """
-  return jnp.power(
-    jnp.sum(jnp.power(jnp.sum(jnp.power(x-y, p), axis=0), q/p)), 1/q)
+    """Computes the loss induced by the L_{p,q} norm.
+
+    The L_{p,q} norm applies the Lp norm over features, and then
+    the Lq norm over datapoints.
+    """
+    return jnp.power(
+        jnp.sum(jnp.power(jnp.sum(jnp.power(x-y, p), axis=0), q/p)), 1/q)
 
 
 def compute_L21_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-  """Computes the loss induced by the L_{2,1} norm.
+    """Computes the loss induced by the L_{2,1} norm.
 
-  The L_{2,1} norm applies the L2 norm over features, and then 
-  sum across datapoints.
-  """
-  return jnp.sum(jnp.sqrt(jnp.sum(jnp.square(x-y), axis=0)))
+    The L_{2,1} norm applies the L2 norm over features, and then 
+    sum across datapoints.
+    """
+    return jnp.sum(jnp.sqrt(jnp.sum(jnp.square(x-y), axis=0)))
 
 
 def compute_frobenius_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-  """Computes root squared error loss."""
-  return jnp.sqrt(jnp.sum((jnp.square(x - y))))
+    """Computes root squared error loss."""
+    return jnp.sqrt(jnp.sum((jnp.square(x - y))))
 
 
 def compute_mse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-  """Computes mean squared error loss."""
-  return jnp.mean(jnp.square(x - y))
+    """Computes mean squared error loss."""
+    return jnp.mean(jnp.square(x - y))
+
+
+def compute_sse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+    """Computes sum squared error loss."""
+    return jnp.sum(jnp.square(x - y))
 
 
 def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
@@ -42,6 +48,4 @@ def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
     """
     std = jnp.exp(log_std)
     return 0.5 * jnp.sum(
-      -2*log_std - 1.0 + jnp.square(std) + jnp.square(mean), axis=-1)
-  
-  
+        -2*log_std - 1.0 + jnp.square(std) + jnp.square(mean), axis=-1)

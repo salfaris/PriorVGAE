@@ -54,6 +54,7 @@ def plot_images_from_arrays(
         'vmax': _max,
     }
     num_x, num_y = image_shape
+    if len(arrays) == 1: axes = [axes]
     for idx, ax in enumerate(axes):
         image = arrays[idx].reshape(num_y, num_x)
         im = ax.imshow(image, **imshow_dict)
