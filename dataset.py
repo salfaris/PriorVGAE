@@ -16,7 +16,7 @@ def load_dataset(path_to_dataset: str) -> jraph.GraphsTuple:
 
 def generate_synthetic_dataset(
         scale: int = 1) -> Tuple[
-            jnp.ndarray, jnp.ndarray, int, int, Tuple[int, int]]:
+            np.ndarray, jnp.ndarray, np.ndarray, int, Tuple[int, int]]:
     """Generates a synthetic dataset."""
     num_x = 15 * scale
     num_y = 10 * scale
@@ -31,6 +31,8 @@ def generate_synthetic_dataset(
     num_regions = len(polygons)
 
     # Adjacency matrix.
+    # NOTE: Do not make `A` a jnp.ndarray as for some reason it slows down
+    #       the predictive model when used. Very strange.
     A = np.zeros(shape=(num_regions, num_regions))
     for i in range(num_regions):
         for j in range(i+1, num_regions):
@@ -38,8 +40,7 @@ def generate_synthetic_dataset(
                 polygons[i].intersection(polygons[j]).length > 0)
             if polygons_intersect:
                 A[i, j] = A[j, i] = 1
-    
-    A = jnp.asarray(A)
+
     # Number of neighbours.
     d = A.sum(axis=0)
     D = jnp.diag(d)
