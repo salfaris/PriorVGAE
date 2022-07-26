@@ -36,14 +36,21 @@ def plot_samples(
 
 def plot_images_from_arrays(
         arrays: List[np.ndarray],
-        titles: List[str],
+        titles: Optional[List[str]] = None,
         figsize: Tuple[int, int] = (12, 4),
         image_shape: Optional[Tuple[int, int]] = None,
-        cmap: str = 'viridis') -> None:
+        cmap: str = 'viridis',
+        flip: bool = False) -> None:
     if image_shape is None:
         image_shape = (15, 10)  # (num_x, num_y)
 
-    fig, axes = plt.subplots(1, len(arrays), figsize=figsize)
+    nrows = 1
+    ncols = len(arrays)
+    
+    if flip:
+        ncols, nrows = nrows, ncols
+        
+    fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
     _min, _max = np.amin(arrays), np.amax(arrays)
 
     imshow_dict = {
@@ -54,12 +61,16 @@ def plot_images_from_arrays(
         'vmax': _max,
     }
     num_x, num_y = image_shape
-    if len(arrays) == 1: axes = [axes]
+    if len(arrays) == 1:
+        axes = [axes]
     for idx, ax in enumerate(axes):
         image = arrays[idx].reshape(num_y, num_x)
         im = ax.imshow(image, **imshow_dict)
         fig.colorbar(im, ax=ax)
-        ax.set_title(titles[idx])
+        if titles is not None:
+            ax.set_title(titles[idx])
+    
+    return axes
 
 
 def plot_compare_estimates(
