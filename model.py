@@ -4,6 +4,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import jraph
+import numpy as np
 
 
 class VGAEOutput(NamedTuple):
@@ -57,8 +58,6 @@ def decoder(
         act_fn: Callable = jax.nn.relu) -> jraph.GraphsTuple:
     # `hidden_gnn_dim` must match node dim
     # from node_update_fn of last GNN layer.
-    z = hk.Linear(hidden_fc_dim,
-                  name='decoder_hidden1_fc')(z)
     z = hk.Linear(num_nodes*hidden_gnn_dim,
                   name='decoder_hidden2_fc')(z)  # (batch_size, num_nodes*hidden_gnn_dim)
     z = act_fn(z)
@@ -66,19 +65,19 @@ def decoder(
     z = z.reshape((batch_size*num_nodes, hidden_gnn_dim))
     graph = graph._replace(nodes=z)
 
-    @jraph.concatenated_args
-    def node_update_fn(feats: jnp.ndarray) -> jnp.ndarray:
-        """Node update function for hidden layer."""
-        net = hk.Sequential(
-            [hk.Linear(hidden_gnn_dim,
-                       name='decoder_hidden_gnn'), act_fn])
-        return net(feats)
+    # @jraph.concatenated_args
+    # def node_update_fn(feats: jnp.ndarray) -> jnp.ndarray:
+    #     """Node update function for hidden layer."""
+    #     net = hk.Sequential(
+    #         [hk.Linear(hidden_gnn_dim,
+    #                    name='decoder_hidden_gnn'), act_fn])
+    #     return net(feats)
 
-    net = jraph.GraphConvolution(
-        update_node_fn=node_update_fn,
-        add_self_edges=True
-    )
-    graph = net(graph)
+    # net = jraph.GraphConvolution(
+    #     update_node_fn=node_update_fn,
+    #     add_self_edges=True
+    # )
+    # graph = net(graph)
     net = jraph.GraphConvolution(
         update_node_fn=hk.Linear(output_dim, name='decoder_output')
     )
@@ -133,3 +132,83 @@ class VGAE(hk.Module):
         )
 
         return VGAEOutput(mean, log_std, output)
+
+
+def priorvae_encoder(
+        x: jnp.ndarray,
+        hidden1_dim: int,
+        hidden2_dim: int,
+        latent_dim: int,
+        act_fn: Callable = jax.nn.relu) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """Encoder for PriorVAE."""
+    x = hk.Flatten()(x)
+    x = hk.Sequential(
+        [
+            hk.Linear(hidden1_dim),
+            act_fn,
+            hk.Linear(hidden2_dim),
+            act_fn,
+        ]
+    )(x)
+    mean = hk.Linear(latent_dim, name='mean')(x)
+    log_std = hk.Linear(latent_dim, name='log_std')(x)
+    return mean, log_std
+
+
+def priorvae_decoder(
+        z: jnp.ndarray,
+        hidden1_dim: int,
+        hidden2_dim: int,
+        output_dim: int,
+        act_fn: Callable = jax.nn.relu) -> jraph.GraphsTuple:
+    output = hk.Sequential(
+        [
+            hk.Linear(hidden1_dim, name='decoder_hidden1_fc'),
+            act_fn,
+            hk.Linear(hidden2_dim, name='decoder_hidden2_fc'),
+            act_fn,
+            hk.Linear(output_dim, name='output'),
+        ]
+    )(z)
+    output = jnp.reshape(output, (-1, output_dim))
+    return output
+
+
+class PriorVAE(hk.Module):
+    """Main VAE model class, uses Encoder & Decoder under the hood."""
+
+    def __init__(
+        self,
+        hidden1_dim: int,
+        hidden2_dim: int,
+        latent_dim: int,
+        output_dim: int,
+    ):
+        super().__init__()
+        self._encoder_hidden1_dim = hidden1_dim
+        self._encoder_hidden2_dim = hidden2_dim
+        self._latent_dim = latent_dim
+        self._decoder_hidden1_dim = self._encoder_hidden2_dim
+        self._decoder_hidden2_dim = self._encoder_hidden1_dim
+        self._output_dim = output_dim
+
+    def __call__(self, x: jnp.ndarray) -> VGAEOutput:
+        x = x.astype(jnp.float32)
+        mean, log_std = priorvae_encoder(
+            x,
+            self._encoder_hidden1_dim,
+            self._encoder_hidden2_dim,
+            self._latent_dim,
+        )
+
+        std = jnp.exp(log_std)
+        z = mean + std * jax.random.normal(hk.next_rng_key(), mean.shape)
+
+        output = priorvae_decoder(
+            z,
+            self._decoder_hidden1_dim,
+            self._decoder_hidden2_dim,
+            self._output_dim,
+        )
+
+        return VGAEOutput(mean, std, output)
