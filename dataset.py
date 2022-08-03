@@ -1,5 +1,5 @@
 import pickle
-from typing import Tuple
+from typing import Tuple, Optional
 
 import jax.numpy as jnp
 import jraph
@@ -15,11 +15,13 @@ def load_dataset(path_to_dataset: str) -> jraph.GraphsTuple:
 
 
 def generate_synthetic_dataset(
+        x_dim: int = 15,
+        y_dim: int = 10,
         scale: int = 1) -> Tuple[
             np.ndarray, jnp.ndarray, np.ndarray, int, Tuple[int, int]]:
     """Generates a synthetic dataset."""
-    num_x = 15 * scale
-    num_y = 10 * scale
+    num_x = x_dim * scale
+    num_y = y_dim * scale
 
     # Generate polygons.
     polygons = []
@@ -69,8 +71,15 @@ def create_grid_graph(adj_matrix: np.ndarray) -> jraph.GraphsTuple:
 
 
 def get_car_draws_as_graph(
-        car_draws: jnp.ndarray, adj_matrix: jnp.ndarray) -> jraph.GraphsTuple:
-    graph = create_grid_graph(adj_matrix=adj_matrix)
+        car_draws: jnp.ndarray,
+        graph: Optional[jraph.GraphsTuple] = None,
+        adj_matrix: Optional[jnp.ndarray] = None) -> jraph.GraphsTuple:
+    if graph is None and adj_matrix is None:
+        raise ValueError('Either graph or adj_matrix must be provided.')
+
+    if graph is None:
+        graph = create_grid_graph(adj_matrix=adj_matrix)
+
     return graph._replace(nodes=car_draws)
 
 
