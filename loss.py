@@ -1,6 +1,35 @@
 import jax.numpy as jnp
 
 
+def compute_mse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+    """Computes mean squared error loss."""
+    if x.shape != y.shape:
+        raise ValueError("Loss requires x and y to have the same shape.")
+    return jnp.mean(jnp.square(x - y))
+
+
+def compute_sse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+    """Computes sum squared error loss."""
+    if x.shape != y.shape:
+        raise ValueError("Loss requires x and y to have the same shape.")
+    return jnp.sum(jnp.square(x - y))
+
+
+def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
+    r"""Calculate KL divergence between given and standard gaussian distributions.
+
+    Args:
+        mean: feature matrix of the mean.
+        log_std: feature matrix of the log-covariance.
+
+    Returns:
+        A vector representing KL divergence of the two Gaussian distributions
+        of length |V| where V is the nodes in the graph.
+    """
+    std = jnp.exp(log_std)
+    return 0.5 * jnp.sum(
+        -2*log_std - 1.0 + jnp.square(std) + jnp.square(mean), axis=-1)
+
 def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.ndarray:
     """Computes the loss induced by the L_{p,q} norm.
 
@@ -23,29 +52,3 @@ def compute_L21_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
 def compute_frobenius_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
     """Computes root squared error loss."""
     return jnp.sqrt(jnp.sum((jnp.square(x - y))))
-
-
-def compute_mse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-    """Computes mean squared error loss."""
-    return jnp.mean(jnp.square(x - y))
-
-
-def compute_sse_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-    """Computes sum squared error loss."""
-    return jnp.sum(jnp.square(x - y))
-
-
-def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
-    r"""Calculate KL divergence between given and standard gaussian distributions.
-
-    Args:
-        mean: feature matrix of the mean.
-        log_std: feature matrix of the log-covariance.
-
-    Returns:
-        A vector representing KL divergence of the two Gaussian distributions
-        of length |V| where V is the nodes in the graph.
-    """
-    std = jnp.exp(log_std)
-    return 0.5 * jnp.sum(
-        -2*log_std - 1.0 + jnp.square(std) + jnp.square(mean), axis=-1)
