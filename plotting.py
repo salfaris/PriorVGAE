@@ -75,8 +75,7 @@ def plot_images_from_arrays(
         if titles is not None:
             ax.set_title(titles[idx])
     
-    return axes
-
+    return axes, imshow_dict
 
 def plot_compare_estimates(
         data_x: np.ndarray,
