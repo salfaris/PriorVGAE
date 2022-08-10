@@ -83,6 +83,12 @@ def get_car_draws_as_graph(
     return graph._replace(nodes=car_draws)
 
 
+def get_car_draws_as_graph_given_base_graph(
+        car_draws: jnp.ndarray,
+        base_graph: jraph.GraphsTuple) -> jraph.GraphsTuple:
+    return base_graph._replace(nodes=car_draws)
+
+
 def convert_jraph_to_networkx_graph(jraph_graph: jraph.GraphsTuple) -> nx.Graph:
     """Converts a JAX GraphsTuple to a NetworkX graph.
 
