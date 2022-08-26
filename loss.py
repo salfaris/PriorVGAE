@@ -30,6 +30,7 @@ def compute_kl_gaussian(mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
     return 0.5 * jnp.sum(
         -2*log_std - 1.0 + jnp.square(std) + jnp.square(mean), axis=-1)
 
+
 def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.ndarray:
     """Computes the loss induced by the L_{p,q} norm.
 
@@ -43,7 +44,7 @@ def compute_Lpq_loss(x: jnp.ndarray, y: jnp.ndarray, p: float, q: float) -> jnp.
 def compute_L21_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
     """Computes the loss induced by the L_{2,1} norm.
 
-    The L_{2,1} norm applies the L2 norm over features, and then 
+    The L_{2,1} norm applies the L2 norm over features, and then
     sum across datapoints.
     """
     return jnp.sum(jnp.sqrt(jnp.sum(jnp.square(x-y), axis=0)))
@@ -52,3 +53,8 @@ def compute_L21_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
 def compute_frobenius_loss(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
     """Computes root squared error loss."""
     return jnp.sqrt(jnp.sum((jnp.square(x - y))))
+
+
+def gaussian_log_prob(x: jnp.ndarray, mean: jnp.ndarray, log_std: jnp.ndarray) -> jnp.ndarray:
+    """Computes the log probability of a Gaussian distribution."""
+    return - 0.5 * jnp.square((x - mean) / jnp.exp(log_std))
